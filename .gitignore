@@ -7,3 +7,15 @@ __pycache__/
 
 #mine
 likhit.md
+
+# wandb local run files (runs are on wandb.ai)
+wandb/
+
+# Q3: raw generations are ~15 MB -> hosted on the HuggingFace Hub, not in git
+src/part3/outputs/*.jsonl
+# Q3: keep only the prompt-format ablation sanity logs (0/1/3/5-shot); main-run console log is on WandB
+src/part3/logs/*
+!src/part3/logs/sanity_20261003_212649.log
+!src/part3/logs/sanity_20261003_212801.log
+!src/part3/logs/sanity_20261003_213728.log
+!src/part3/logs/sanity_20261003_214048.log

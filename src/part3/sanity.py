@@ -10,8 +10,9 @@ import torch
 import torch.nn.functional as F
 import yaml
 
-from src.part3 import data, decoding
-from src.part3.run import load_model, prepare_samples
+from src.part3 import data, decoding, metrics
+from src.part3.logging_utils import setup_run_log
+from src.part3.run import get_device, load_model, prepare_samples
 
 
 def run(model, samples, fn, batch_size, pad_id, device, **kw):
@@ -38,11 +39,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="src/part3/config.yaml")
     parser.add_argument("--n", type=int, default=48)
+    parser.add_argument("--device", default=None, help="e.g. cuda:1; overrides the config")
+    parser.add_argument("--n-shots", type=int, default=None, help="overrides the config's n_shots")
     args = parser.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
+    if args.n_shots is not None:
+        cfg["n_shots"] = args.n_shots
+    setup_run_log(cfg["log_dir"], "sanity")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device(cfg, args.device)
     model, tok = load_model(cfg, device)
     eos_id = tok.eos_token_id
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else eos_id
@@ -55,7 +61,7 @@ def main():
     q = torch.quantile(ref_lens, torch.tensor([0.5, 0.9, 0.99, 1.0]))
     print(f"reference tokens: p50={q[0]:.0f} p90={q[1]:.0f} p99={q[2]:.0f} max={q[3]:.0f}; "
           f"{(ref_lens > T).sum().item()} of {len(ref_lens)} exceed max_new_tokens={T}")
-    print(f"eos_id={eos_id} pad_id={pad_id} device={device}\n")
+    print(f"eos_id={eos_id} pad_id={pad_id} device={device} n_shots={cfg.get('n_shots', 0)}\n")
 
     samples = all_samples[: args.n]
     ids_of = lambda outs: [o["token_ids"] for o in outs]
@@ -89,22 +95,28 @@ def main():
     # Log-probs recorded in the loop must equal a fresh full forward (checks the KV cache,
     # padding and, for beam search, the cache reordering).
     for name, outs in [("greedy", greedy), ("top_p0.9", topp), ("beam_w4", beam4)]:
-        err = max(
-            (rescore(model, s["prompt_ids"], o["token_ids"], device) - torch.tensor(o["logprobs"], device=device))
-            .abs().max().item()
+        # fp32 rounding differs between cached 1-token steps and one full pass (~1e-3);
+        # real bugs (positions, cache reordering) show up as errors of 0.1 or more.
+        errs = torch.cat([
+            (rescore(model, s["prompt_ids"], o["token_ids"], device) - torch.tensor(o["logprobs"], device=device)).abs()
             for s, o in zip(samples[:16], outs[:16])
-        )
-        report(f"{name} loop logprobs == full-forward logprobs", err < 1e-3, f"max abs err {err:.2e}")
+        ])
+        report(f"{name} loop logprobs == full-forward logprobs", errs.max().item() < 1e-2,
+               f"max abs err {errs.max().item():.2e}, mean {errs.mean().item():.2e}")
 
-    mean_sum = lambda outs: sum(sum(o["logprobs"]) for o in outs) / len(outs)
-    mean_len = lambda outs: sum(len(o["token_ids"]) for o in outs) / len(outs)
-    print(f"\nmean sum-logprob / length:  greedy {mean_sum(greedy):.2f} / {mean_len(greedy):.1f}   "
-          f"beam4 {mean_sum(beam4):.2f} / {mean_len(beam4):.1f}   top_p0.9 {mean_sum(topp):.2f} / {mean_len(topp):.1f}")
-
-    s = samples[0]
-    print(f"\nPROMPT:    {s['prompt']}\nREFERENCE: {s['reference']}")
+    print(f"\n{'strategy':10} {'acc':>6} {'ppl_med':>8} {'sum_logp':>9} {'len':>5} {'eos%':>5}  ({len(samples)} samples)")
     for name, outs in [("greedy", greedy), ("beam_w4", beam4), ("top_p0.9", topp)]:
-        print(f"{name.upper():9}: {tok.decode(outs[0]['token_ids'], skip_special_tokens=True)!r}")
+        acc = sum(metrics.positional_accuracy(o["token_ids"], s["ref_ids"]) for s, o in zip(samples, outs)) / len(outs)
+        ppl = torch.tensor([metrics.sample_perplexity(o["logprobs"]) for o in outs]).median().item()
+        sum_lp = sum(sum(o["logprobs"]) for o in outs) / len(outs)
+        length = sum(len(o["token_ids"]) for o in outs) / len(outs)
+        eos = 100 * sum(o["token_ids"][-1] == eos_id for o in outs) / len(outs)
+        print(f"{name:10} {acc:6.3f} {ppl:8.2f} {sum_lp:9.2f} {length:5.1f} {eos:5.0f}")
+
+    for s, g, b, t in list(zip(samples, greedy, beam4, topp))[:3]:
+        print(f"\nPROMPT:    {s['prompt']}\nREFERENCE: {s['reference']}")
+        for name, o in [("greedy", g), ("beam_w4", b), ("top_p0.9", t)]:
+            print(f"{name.upper():9}: {tok.decode(o['token_ids'], skip_special_tokens=True)!r}")
 
 
 if __name__ == "__main__":

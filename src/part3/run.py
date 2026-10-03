@@ -19,8 +19,21 @@ import yaml
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from src.part3 import data, decoding, metrics
+from src.part3.logging_utils import setup_run_log
 
 N_LOGGED_GENERATIONS = 50
+
+
+def get_device(cfg: dict, override: str | None = None) -> torch.device:
+    """--device beats the config's `device`; falls back to CPU if CUDA is unavailable."""
+    name = override or cfg.get("device", "cuda:0")
+    if name.startswith("cuda") and not torch.cuda.is_available():
+        print(f"CUDA unavailable, using CPU instead of {name}")
+        name = "cpu"
+    device = torch.device(name)
+    if device.type == "cuda":
+        print(f"device: {device} ({torch.cuda.get_device_name(device)})")
+    return device
 
 
 def load_model(cfg: dict, device):
@@ -29,9 +42,15 @@ def load_model(cfg: dict, device):
     return model.to(device).eval(), tokenizer
 
 
-def prepare_samples(cfg: dict, tokenizer, n_samples: int) -> list[dict]:
+def prepare_samples(cfg: dict, tokenizer, n_samples: int, n_shots: int | None = None) -> list[dict]:
+    """The same `n_samples` stories for every experiment; `n_shots` (default: the config's)
+    only changes the example-story prefix in front of each prompt."""
+    n_shots = cfg.get("n_shots", 0) if n_shots is None else n_shots
     samples = data.load_samples(cfg["dataset"], cfg["split"], cfg["n_samples"], cfg["data_seed"])
-    return data.tokenize_samples(samples[:n_samples], tokenizer)
+    prefix = data.build_shot_prefix(cfg["dataset"], n_shots, cfg["data_seed"])
+    if prefix:
+        print(f"prompt prefix ({n_shots}-shot, {len(tokenizer(prefix).input_ids)} tokens):\n{prefix!r}")
+    return data.tokenize_samples(samples[:n_samples], tokenizer, prefix)
 
 
 def decode_batch(model, exp: dict, cfg: dict, input_ids, attention_mask, eos_id, pad_id, generator):
@@ -99,6 +118,7 @@ def run_experiment(model, tokenizer, samples, exp, cfg, device, wandb_run=None) 
     summary = {
         "name": exp["name"],
         "strategy": exp["strategy"],
+        "n_shots": exp.get("n_shots", cfg.get("n_shots", 0)),
         **{k: v for k, v in exp.items() if k not in ("name", "strategy")},
         **metrics.aggregate(records),  # corpus PPL uses the 5-decimal logprobs; negligible
         "n_samples": len(records),
@@ -137,10 +157,12 @@ def main():
     parser.add_argument("--only", default=None, help="comma-separated experiment names")
     parser.add_argument("--n-samples", type=int, default=None, help="override for quick tests")
     parser.add_argument("--no-wandb", action="store_true")
+    parser.add_argument("--device", default=None, help="e.g. cuda:1; overrides the config")
     args = parser.parse_args()
 
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
+    setup_run_log(cfg["log_dir"], "run", cfg)
     experiments = cfg["experiments"]
     if args.only:
         wanted = set(args.only.split(","))
@@ -149,13 +171,11 @@ def main():
         if missing:
             raise SystemExit(f"unknown experiments: {sorted(missing)}")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device(cfg, args.device)
     model, tokenizer = load_model(cfg, device)
-    samples = prepare_samples(cfg, tokenizer, args.n_samples or cfg["n_samples"])
+    n_samples = args.n_samples or cfg["n_samples"]
+    samples_by_shots = {}  # n_shots -> tokenized samples (an experiment may override n_shots)
     os.makedirs(cfg["output_dir"], exist_ok=True)
-    with open(os.path.join(cfg["output_dir"], "sample_indices.json"), "w") as f:
-        json.dump([s["idx"] for s in samples], f)
-    print(f"{len(samples)} samples from {cfg['dataset']}[{cfg['split']}] on {device}")
 
     use_wandb = not args.no_wandb
     if use_wandb:
@@ -164,12 +184,20 @@ def main():
 
     for exp in experiments:
         print(f"== {exp['name']}")
+        n_shots = exp.get("n_shots", cfg.get("n_shots", 0))
+        if n_shots not in samples_by_shots:
+            samples_by_shots[n_shots] = prepare_samples(cfg, tokenizer, n_samples, n_shots)
+            with open(os.path.join(cfg["output_dir"], "sample_indices.json"), "w") as f:
+                json.dump([s["idx"] for s in samples_by_shots[n_shots]], f)
+            print(f"{n_samples} samples from {cfg['dataset']}[{cfg['split']}], {n_shots}-shot prompts")
+        samples = samples_by_shots[n_shots]
         wandb_run = None
         if use_wandb:
             wandb_run = wandb.init(
                 project=cfg["wandb"]["project"], entity=cfg["wandb"]["entity"], group=cfg["wandb"]["group"],
                 name=exp["name"], tags=["part3", exp["strategy"]],
-                config={**run_config, **exp, "n_samples": len(samples)}, reinit="finish_previous",
+                config={**run_config, **exp, "n_shots": n_shots, "n_samples": len(samples)},
+                reinit="finish_previous",
             )
         summary, records = run_experiment(model, tokenizer, samples, exp, cfg, device, wandb_run)
 

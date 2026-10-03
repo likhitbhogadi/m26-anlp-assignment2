@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 @torch.no_grad()
 def _forward(model, input_ids, attention_mask, past_key_values):
-    """One forward pass; returns next-token logits (float32) and the updated cache.
+    """One forward pass; returns last-position logits (float32) and the updated cache.
 
     position_ids are derived from the attention mask so that left padding does not
     shift the positions of the real tokens."""
@@ -28,6 +28,7 @@ def _forward(model, input_ids, attention_mask, past_key_values):
         position_ids=position_ids,
         past_key_values=past_key_values,
         use_cache=True,
+        logits_to_keep=1,  # only the last position is needed; avoids a (batch, prompt_len, vocab) tensor
     )
     return out.logits[:, -1, :].float(), out.past_key_values
 

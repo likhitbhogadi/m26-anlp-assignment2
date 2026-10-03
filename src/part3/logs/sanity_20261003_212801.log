@@ -1,0 +1,45 @@
+# log:     src/part3/logs/sanity_20261003_212801.log
+# started: 2026-10-03 21:28:01
+# command: /home/likhit/likhit/m26/adam/src/part3/sanity.py
+# git:     8332d76 (uncommitted changes)
+
+device: cuda:0 (NVIDIA L40S)
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 5397.51it/s]
+prompt prefix (1-shot, 61 tokens):
+'Raymond wanted to grow a beard so he stopped shaving. After a few weeks his beard came in and he looked good. Raymond discovered that the policy at his job prohibited beards. He fought the policy with his boss and Raymond lost his job. Raymond regrets not shaving the beard.\n\n'
+reference tokens: p50=42 p90=53 p99=60 max=65; 0 of 1000 exceed max_new_tokens=70
+eos_id=0 pad_id=1 device=cuda:0 n_shots=1
+
+[PASS] greedy batched == unbatched (left padding / position_ids) 16/16
+[PASS] beam width 1 == greedy 48/48
+[PASS] top-k k=1 == greedy 48/48
+[PASS] top-p p=1e-6 == greedy 48/48
+[PASS] beam width 2 batched == unbatched 16/16
+[PASS] greedy loop logprobs == full-forward logprobs max abs err 1.01e-03, mean 1.06e-04
+[PASS] top_p0.9 loop logprobs == full-forward logprobs max abs err 2.78e-03, mean 2.47e-04
+[PASS] beam_w4 loop logprobs == full-forward logprobs max abs err 8.51e-04, mean 8.38e-05
+
+strategy      acc  ppl_med  sum_logp   len  eos%  (48 samples)
+greedy      0.043     1.76    -38.78  70.0     0
+beam_w4     0.023     1.57    -30.70  69.8     2
+top_p0.9    0.025    20.98   -205.87  69.5     2
+
+PROMPT:    Amy was an elderly lady.
+REFERENCE: She was in pain and asked her friend for help. Her friend recommended Pilates. Amy began doing Pilates everyday. Amy stopped feeling pain after doing Pilates regularly.
+GREEDY   : ' She was a good-looking woman. She was a good-looking woman. She was a good-looking woman. She was a good-looking woman. She was a good-looking woman. She was a good-looking woman. She was a good-looking woman. She was a good-looking woman. She was a good-looking'
+BEAM_W4  : ' She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard. She had a beard.'
+TOP_P0.9 : ' She was full of energy, which might be stimulating. And her forte was that her headache may be coming from exhaustion.\n\nNearly two months went by. You could be an octogenarian at any time for the best in Texas if you found something to shave and go down for. Things were better than they had been.\n'
+
+PROMPT:    Joey was driving down the road.
+REFERENCE: His engine began to make a noise. He pulled over to see what was wrong. White smoke blew all in his face. His car had blown its engine.
+GREEDY   : ' He was wearing a long-sleeved shirt and a long-sleeved shirt with a white tie. He was wearing a long-sleeved shirt with a white tie. He was wearing a long-sleeved shirt with a white tie. He was wearing a long-sleeved shirt with a'
+BEAM_W4  : ' He was wearing a long-sleeved shirt and a long-sleeved tie. He was wearing a long-sleeved shirt and a long-sleeved tie. He was wearing a long-sleeved shirt and a long-sleeved tie. He was wearing a long-s'
+TOP_P0.9 : ' The trucks had never seen a good looking headman driving off a road. The pickup had been in trouble once on some roads on 4th or 5th from Montgomery county. Several policemen took turns driving a check at the trucking company. The truck was a PRST mix too. Everyone was tired and cranky. One truck stayed in a'
+
+PROMPT:    I heard a knock on the door a little while ago.
+REFERENCE: I looked out the window and saw an old friend. He was always trouble and not fun to be around. I did not want to talk to him. I was really quiet and pretended not to be home so he left.
+GREEDY   : ' I was in the kitchen and I saw a man in a suit. He was wearing a suit and a tie. He was wearing a tie and a shirt. He was wearing a tie and a shirt. He was wearing a tie and a shirt. He was wearing a tie and a shirt. He was wearing a tie and a shirt. He was'
+BEAM_W4  : '\n\n"What\'s going on?"\n\n"I don\'t know."\n\n"What\'s going on?"\n\n"I don\'t know."\n\n"What\'s going on?"\n\n"I don\'t know."\n\n"What\'s going on?"\n\n"I don\'t know."\n\n"What\'s going'
+TOP_P0.9 : '\n\n"Doctor."\n\nRuth informed the office that someone was outside and she hoped the disease still existed, but he was a scientist and never discussed it with her.\n\n"Ough, well, I\'ve got to get a little rest for a while."\n\nThe nurses assured Ruth that she was alright.\n\n"'

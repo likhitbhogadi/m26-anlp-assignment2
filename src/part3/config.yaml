@@ -1,19 +1,23 @@
 # Q3: decoding strategies on Pythia-160M / ROCStories
 model: EleutherAI/pythia-160m
 dtype: float32            # 160M params; fp32 keeps batched/unbatched results bit-comparable
+device: cuda:0            # cuda:0 / cuda:1 / cpu; override per run with --device
 
 dataset: hamishivi/ROCStories
 split: validation
 n_samples: 1000
 data_seed: 0              # which 1000 stories are drawn (same for every experiment)
+n_shots: 3                # full train-split stories shown before each prompt (0 = bare 1st sentence);
+                          # chosen from sanity runs with 0/1/3/5 shots; an experiment may override it
 
-max_new_tokens: 80        # covers the 4-sentence references; sanity.py prints their length percentiles
+max_new_tokens: 70        # references: p50=42, p99=60, max=65 tokens (see sanity log)
 batch_size: 64            # prompts per batch for greedy / top-k / top-p
 beam_batch_size: 16       # prompts per batch for beam search (rows on GPU = 16 * width)
 length_penalty: 1.0       # beam hypothesis score = sum(log p) / length ** length_penalty
 sample_seed: 0            # RNG seed for top-k / top-p sampling
 
 output_dir: src/part3/outputs
+log_dir: src/part3/logs     # one timestamped .log per run (stdout + stderr)
 
 wandb:
   project: anlp-a2-q3
@@ -22,6 +26,7 @@ wandb:
 
 experiments:
   - {name: greedy,        strategy: greedy}
+  - {name: greedy_0shot,  strategy: greedy, n_shots: 0}   # baseline: bare 1st-sentence prompt
 
   - {name: beam_w1,       strategy: beam,  num_beams: 1}
   - {name: beam_w2,       strategy: beam,  num_beams: 2}

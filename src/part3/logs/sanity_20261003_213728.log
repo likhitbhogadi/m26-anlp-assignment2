@@ -1,0 +1,43 @@
+# log:     src/part3/logs/sanity_20261003_213728.log
+# started: 2026-10-03 21:37:28
+# command: /home/likhit/likhit/m26/adam/src/part3/sanity.py
+# git:     8332d76 (uncommitted changes)
+
+device: cuda:0 (NVIDIA L40S)
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3394.06it/s]
+prompt prefix (3-shot, 146 tokens):
+'Raymond wanted to grow a beard so he stopped shaving. After a few weeks his beard came in and he looked good. Raymond discovered that the policy at his job prohibited beards. He fought the policy with his boss and Raymond lost his job. Raymond regrets not shaving the beard.\n\nSue had a crush on the neighbor. After spending time together she learned that he had a crush on her. Sue and her neighbor hung out daily. One day he kissed Sue. Sue was thrilled that she had her first kiss.\n\nMy boyfriend surprised me yesterday. When I came home he had cooked dinner. There were flowers on the table. He even lit some candles. He can be so romantic.\n\n'
+reference tokens: p50=42 p90=53 p99=60 max=65; 0 of 1000 exceed max_new_tokens=70
+eos_id=0 pad_id=1 device=cuda:0 n_shots=3
+
+[PASS] greedy batched == unbatched (left padding / position_ids) 16/16
+[PASS] beam width 1 == greedy 48/48
+[PASS] top-k k=1 == greedy 48/48
+[PASS] top-p p=1e-6 == greedy 48/48
+[PASS] beam width 2 batched == unbatched 16/16
+[PASS] greedy loop logprobs == full-forward logprobs max abs err 1.03e-03, mean 1.03e-04
+[PASS] top_p0.9 loop logprobs == full-forward logprobs max abs err 1.83e-03, mean 2.45e-04
+[PASS] beam_w4 loop logprobs == full-forward logprobs max abs err 1.28e-03, mean 9.48e-05
+
+strategy      acc  ppl_med  sum_logp   len  eos%  (48 samples)
+greedy      0.042     1.62    -35.22  70.0     0
+beam_w4     0.031     1.56    -31.91  70.0     0
+top_p0.9    0.026    15.85   -195.23  70.0     0
+
+PROMPT:    Amy was an elderly lady.
+REFERENCE: She was in pain and asked her friend for help. Her friend recommended Pilates. Amy began doing Pilates everyday. Amy stopped feeling pain after doing Pilates regularly.
+GREEDY   : ' She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good friend. She was a good'
+BEAM_W4  : ' She had been in the hospital for a long time. She had been in the hospital for a long time. She had been in the hospital for a long time. She had been in the hospital for a long time. She had been in the hospital for a long time. She had been in the hospital for a long time. She had been in'
+TOP_P0.9 : ' She was 26 years old and would only buy extra parts at the local grocery store. I had watched the video on her car and thought how nice that looked. Amy was 2 years older. She wore jeans and a top because I felt the same way about one, but with a new pair of sneakers, she would wear a new pair of jeans'
+
+PROMPT:    Joey was driving down the road.
+REFERENCE: His engine began to make a noise. He pulled over to see what was wrong. White smoke blew all in his face. His car had blown its engine.
+GREEDY   : ' He was wearing a black shirt and jeans. He was wearing a black shirt and jeans. He was wearing a black shirt and jeans. He was wearing a black shirt and jeans. He was wearing a black shirt and jeans. He was wearing a black shirt and jeans. He was wearing a black shirt and jeans. He was wearing a black shirt and'
+BEAM_W4  : ' He told me that he was going to drive me home. He told me that he was going to drive me home. He told me that he was going to drive me home. He told me that he was going to drive me home. He told me that he was going to drive me home. He told me that he was going to drive me'
+TOP_P0.9 : ' I was in my car and I saw the backseat get pulled over. Joey left and the front door cracked. We walked across the yard. Joey\'s back door and the steps above it split. He cried.\n\n"No!" I yelled.\n\nJoey yelled back, "No!"\n\nHe was a wreck. He had'
+
+PROMPT:    I heard a knock on the door a little while ago.
+REFERENCE: I looked out the window and saw an old friend. He was always trouble and not fun to be around. I did not want to talk to him. I was really quiet and pretended not to be home so he left.
+GREEDY   : ' I was surprised to see a man in his late forties. He was wearing a suit and tie. He was wearing a black shirt and tie. He was wearing a black tie. He was wearing a black tie. He was wearing a black tie. He was wearing a black tie. He was wearing a black tie. He was wearing a black'
+BEAM_W4  : '\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"\n\n"Hello?"'
+TOP_P0.9 : ' They\'re calling him during the week. I\'m sure he\'s better. I don\'t like waiting until day after tomorrow. That\'s a scary thing to say.\n\nMy love said, "Leave me a message."\n\nI hung up.\n\n## 6\n\nEveryone found us. We sat in the darkened. No one ever'

@@ -1,0 +1,43 @@
+# log:     src/part3/logs/sanity_20261003_214048.log
+# started: 2026-10-03 21:40:48
+# command: /home/likhit/likhit/m26/adam/src/part3/sanity.py
+# git:     8332d76 (uncommitted changes)
+
+device: cuda:0 (NVIDIA L40S)
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 5402.91it/s]
+prompt prefix (5-shot, 253 tokens):
+'Raymond wanted to grow a beard so he stopped shaving. After a few weeks his beard came in and he looked good. Raymond discovered that the policy at his job prohibited beards. He fought the policy with his boss and Raymond lost his job. Raymond regrets not shaving the beard.\n\nSue had a crush on the neighbor. After spending time together she learned that he had a crush on her. Sue and her neighbor hung out daily. One day he kissed Sue. Sue was thrilled that she had her first kiss.\n\nMy boyfriend surprised me yesterday. When I came home he had cooked dinner. There were flowers on the table. He even lit some candles. He can be so romantic.\n\nShe sat at my feet. I looked down at her. She was staring very intently. I gave her a treat. She was satisfied and walked away.\n\nTina had a bad zit on her face with two days until picture day. She went home everyday, and focussed on healing the zit. The night before picture day, Tina slept with acne cream on her face. When she woke up and cleaned off the cream, she was all clear. Tina went to school and proudly took her picture.\n\n'
+reference tokens: p50=42 p90=53 p99=60 max=65; 0 of 1000 exceed max_new_tokens=70
+eos_id=0 pad_id=1 device=cuda:0 n_shots=5
+
+[PASS] greedy batched == unbatched (left padding / position_ids) 16/16
+[PASS] beam width 1 == greedy 48/48
+[PASS] top-k k=1 == greedy 48/48
+[PASS] top-p p=1e-6 == greedy 48/48
+[PASS] beam width 2 batched == unbatched 16/16
+[PASS] greedy loop logprobs == full-forward logprobs max abs err 5.07e-04, mean 6.15e-05
+[PASS] top_p0.9 loop logprobs == full-forward logprobs max abs err 2.54e-03, mean 1.30e-04
+[PASS] beam_w4 loop logprobs == full-forward logprobs max abs err 1.31e-03, mean 6.31e-05
+
+strategy      acc  ppl_med  sum_logp   len  eos%  (48 samples)
+greedy      0.050     1.62    -36.63  70.0     0
+beam_w4     0.036     1.49    -30.75  70.0     0
+top_p0.9    0.021    17.67   -202.67  70.0     0
+
+PROMPT:    Amy was an elderly lady.
+REFERENCE: She was in pain and asked her friend for help. Her friend recommended Pilates. Amy began doing Pilates everyday. Amy stopped feeling pain after doing Pilates regularly.
+GREEDY   : ' She was a very nice lady. She was a very nice lady. She was a very nice lady. She was a very nice lady. She was a very nice lady. She was a very nice lady. She was a very nice lady. She was a very nice lady. She was a very nice lady. She was a very nice lady.'
+BEAM_W4  : ' She had a bad zit on her face with two days until picture day. When she woke up and cleaned off the cream, she was all clear. She went to school and proudly took her picture.\n\nTina had a bad zit on her face with two days until picture day. When she woke up and cleaned off the cream,'
+TOP_P0.9 : ' Her husband had been a nurse. She usually saw Todd as she was, the doctor and whatever took place on his/her outing. When Todd arrived home he was back in the hotel, so he took his medication again and did all the paperwork that lay by. After that his curtains were removed, the room is still clean and tidy.\n'
+
+PROMPT:    Joey was driving down the road.
+REFERENCE: His engine began to make a noise. He pulled over to see what was wrong. White smoke blew all in his face. His car had blown its engine.
+GREEDY   : ' He was driving a car that was parked in front of his house. He was driving a car that was parked in front of his house. He was driving a car that was parked in front of his house. He was driving a car that was parked in front of his house. He was driving a car that was parked in front of his house.'
+BEAM_W4  : ' He told me that he was going to get a new car. I told him that I was going to get a new car.\n\nJoey told me that he was going to get a new car. I told him that I was going to get a new car.\n\nJoey told me that he was going to get a new car'
+TOP_P0.9 : " I was in my car and approached him. He had forgotten about me. I made sure that he knew who was driving and then waved and politely said he couldn't know. He also told me that he wouldn't be driving until she was fine.\n\nI walked to Joey's house. Joey loved watching my picture. He told me that he"
+
+PROMPT:    I heard a knock on the door a little while ago.
+REFERENCE: I looked out the window and saw an old friend. He was always trouble and not fun to be around. I did not want to talk to him. I was really quiet and pretended not to be home so he left.
+GREEDY   : ' I looked up and saw a man in a suit. He was wearing a suit and tie. He was wearing a black shirt and tie. He was wearing a black jacket. He was wearing a black jacket. He was wearing a black jacket. He was wearing a black jacket. He was wearing a black jacket. He was wearing a black jacket.'
+BEAM_W4  : ' I looked up and saw a man. He was dressed in a suit and tie. He was wearing a white shirt and tie. He was wearing a white shirt and tie. He was wearing a white shirt and tie. He was wearing a white shirt and tie. He was wearing a white shirt and tie. He was wearing a white shirt and tie'
+TOP_P0.9 : " He looked up and saw me. Told me what happened. His name was Brad. Brad died a few days before his funeral. The second time had been this horrible. I did not know it at the time. I didn't know why Brad died. The news would have been, If someone had killed him, he would have been accused of"

@@ -1,0 +1,41 @@
+# log:     src/part3/logs/sanity_20261003_212649.log
+# started: 2026-10-03 21:26:49
+# command: /home/likhit/likhit/m26/adam/src/part3/sanity.py
+# git:     8332d76 (uncommitted changes)
+
+device: cuda:0 (NVIDIA L40S)
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3055.70it/s]
+reference tokens: p50=42 p90=53 p99=60 max=65; 0 of 1000 exceed max_new_tokens=70
+eos_id=0 pad_id=1 device=cuda:0 n_shots=0
+
+[PASS] greedy batched == unbatched (left padding / position_ids) 16/16
+[PASS] beam width 1 == greedy 48/48
+[PASS] top-k k=1 == greedy 48/48
+[PASS] top-p p=1e-6 == greedy 48/48
+[PASS] beam width 2 batched == unbatched 16/16
+[PASS] greedy loop logprobs == full-forward logprobs max abs err 9.24e-04, mean 1.26e-04
+[PASS] top_p0.9 loop logprobs == full-forward logprobs max abs err 1.30e-03, mean 2.44e-04
+[PASS] beam_w4 loop logprobs == full-forward logprobs max abs err 8.42e-04, mean 1.04e-04
+
+strategy      acc  ppl_med  sum_logp   len  eos%  (48 samples)
+greedy      0.012     1.97    -51.31  70.0     0
+beam_w4     0.009     1.68    -36.75  70.0     0
+top_p0.9    0.009    23.21   -219.16  70.0     0
+
+PROMPT:    Amy was an elderly lady.
+REFERENCE: She was in pain and asked her friend for help. Her friend recommended Pilates. Amy began doing Pilates everyday. Amy stopped feeling pain after doing Pilates regularly.
+GREEDY   : '\n\n"I\'m sorry, I\'m sorry," she said. "I\'m sorry."\n\n"I\'m sorry," he said. "I\'m sorry."\n\n"I\'m sorry," she said. "I\'m sorry."\n\n"I\'m sorry," he said. "I\'m sorry."\n\n"I\'m sorry'
+BEAM_W4  : '\n\n"I\'m sorry," she said.\n\n"I\'m sorry," he said.\n\n"I\'m sorry," she said again.\n\n"I\'m sorry," he said again.\n\n"I\'m sorry," she said again.\n\n"I\'m sorry," he said again.\n\n"I\'m sorry'
+TOP_P0.9 : ' He was referred to me for further observation and until I met him he had just a little travel schedule and he asked to get my attention. I put up his screen and stated that I have to see him today to go with my brother for a day. From a quality point of view he was quite happy and I felt that he would be better off'
+
+PROMPT:    Joey was driving down the road.
+REFERENCE: His engine began to make a noise. He pulled over to see what was wrong. White smoke blew all in his face. His car had blown its engine.
+GREEDY   : '\n\n"I\'m going to get out of here," he said. "I\'m going to get out of here."\n\n"You\'re going to get out of here?"\n\n"I\'m going to get out of here."\n\n"You\'re going to get out of here?"\n\n"I\'m going to get out'
+BEAM_W4  : '\n\n"I don\'t know what\'s going on," he said. "I don\'t know what\'s going on. I don\'t know what\'s going on. I don\'t know what\'s going on. I don\'t know what\'s going on. I don\'t know what\'s going on. I don\'t know what\'s going on.'
+TOP_P0.9 : " He was in his Jeep and he'd have no further problems with the Jeep's bed if they came within arm's reach of one another.\n\nJust an hour later Ben was home from work with his son and his family. He was out of his office and Jai was ready to finish his paperwork, but for once he was having"
+
+PROMPT:    I heard a knock on the door a little while ago.
+REFERENCE: I looked out the window and saw an old friend. He was always trouble and not fun to be around. I did not want to talk to him. I was really quiet and pretended not to be home so he left.
+GREEDY   : ' I was just about to go in and get a drink, when I heard a knock on the door. I looked around and saw that it was a man in a suit. He was wearing a suit and tie. He was wearing a tie and a pair of gloves. He was wearing a tie and a pair of gloves. He was wearing a tie'
+BEAM_W4  : '\n\n"Hello?"\n\n"Yes?"\n\n"What\'s the matter?"\n\n"Nothing."\n\n"What\'s the matter?"\n\n"Nothing."\n\n"What\'s the matter?"\n\n"Nothing."\n\n"What\'s the matter?"\n\n"Nothing."\n\n"What\'s the matter?"'
+TOP_P0.9 : '\n\n"Looks like it\'s about to start. There\'s not a soul here." I watched for them to get out of the hall. "Did you find anything else?"\n\n"No."\n\n"I hope so." I was already in the front room when I heard the voices. I froze.\n\n"No, I'

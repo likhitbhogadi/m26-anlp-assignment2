@@ -16,11 +16,23 @@ def load_samples(dataset: str, split: str, n_samples: int, seed: int) -> list[di
     ]
 
 
-def tokenize_samples(samples: list[dict], tokenizer) -> list[dict]:
-    """Adds `prompt_ids` and `ref_ids`. The reference gets a leading space because it
-    directly follows the prompt sentence in the story."""
+def build_shot_prefix(dataset: str, n_shots: int, seed: int) -> str:
+    """`n_shots` complete stories from the train split (fixed seed), each followed by a
+    blank line. Shown before every prompt so the base model sees the expected format:
+    one short story continuing on the same line."""
+    if n_shots == 0:
+        return ""
+    ds = load_dataset(dataset, split="train")
+    g = torch.Generator().manual_seed(seed)
+    idx = torch.randperm(len(ds), generator=g)[:n_shots].tolist()
+    return "".join(ds[i]["text"] + "\n\n" for i in idx)
+
+
+def tokenize_samples(samples: list[dict], tokenizer, prefix: str = "") -> list[dict]:
+    """Adds `prompt_ids` (prefix + prompt sentence) and `ref_ids`. The reference gets a
+    leading space because it directly follows the prompt sentence in the story."""
     for s in samples:
-        s["prompt_ids"] = tokenizer(s["prompt"]).input_ids
+        s["prompt_ids"] = tokenizer(prefix + s["prompt"]).input_ids
         s["ref_ids"] = tokenizer(" " + s["reference"]).input_ids
     return samples
 
