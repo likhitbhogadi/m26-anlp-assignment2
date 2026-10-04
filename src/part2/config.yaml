@@ -1,0 +1,70 @@
+# Q2: pretraining the Q1 dense transformer with from-scratch optimizers
+dataset: browndw/human-ai-parallel-corpus   # HAP-E: 8,290 docs x 8 variants (chunk_1, chunk_2, 6 LLM continuations)
+device: cuda:0            # override per run with --device
+
+tokenizer:
+  path: src/part2/tokenizer/tokenizer.json   # small, committed
+  vocab_size: 32000       # English byte-level BPE (same vocab size as Q1 -> same model size)
+
+data:
+  cache_dir: /scratch/likhit/anlp-a2/q2/cache   # tokenized streams + BLEU items (regenerable)
+  data_seed: 0            # doc-level split + doc order of the training stream
+  val_frac: 0.05          # fraction of source docs (all 8 variants) per held-out split, per text type
+  test_frac: 0.05
+  prompt_variant: chunk_1 # BLEU prompt = end of the human-written first half
+  human_variant: chunk_2  # human continuation (first reference); the other 6 variants are LLM continuations
+
+model:                    # = Q1 dense baseline (config 1)
+  d_model: 512
+  n_layers: 6
+  n_heads: 8
+  d_ff: 2048
+  dropout: 0.0
+  use_moe: false
+
+train:
+  seq_len: 512            # packed sequences (documents separated by <eos>)
+  batch_size: 32          # 16,384 tokens / step
+  warmup_frac: 0.05       # linear warmup over 5% of the run, then cosine
+  min_lr_ratio: 0.1       # cosine decays to peak * min_lr_ratio
+  grad_clip: 1.0
+  seed: 0                 # parameter init (same for every optimizer)
+  log_every: 25
+  n_evals: 10             # evals at every 1/n_evals of the run (+ step 0) -> every 0.1x dataset in full runs
+  eval_batch_size: 16     # val-loss windows per forward (fp32 logits: 16 x 512 x 32k = 1 GiB)
+
+eval:
+  prompt_tokens: 128      # last tokens of chunk_1 used as the prompt
+  gen_tokens: 64          # greedy continuation length (<eos> banned); references cut to the same length
+  gen_batch_size: 128
+  n_samples: 20           # continuations saved to samples_<run>.csv
+
+# Peak LRs here are the values used by the final runs = best LR-probe val loss per optimizer
+# (adamw 6e-4, mars 1.2e-3, lion 2.4e-4, muon 4e-2; muon keeps the probed inner adam_lr 1.2e-3).
+optimizers:
+  adamw: {lr: 6.0e-4, betas: [0.9, 0.95], eps: 1.0e-8, weight_decay: 0.1}
+  mars:  {lr: 1.2e-3, betas: [0.95, 0.99], eps: 1.0e-8, weight_decay: 0.1, gamma: 0.025}
+  lion:  {lr: 2.4e-4, betas: [0.9, 0.99], weight_decay: 1.0}
+  muon:  {lr: 4.0e-2, momentum: 0.95, nesterov: true, ns_steps: 5, weight_decay: 0.1,
+          adam_lr: 1.2e-3, adam_betas: [0.9, 0.95], adam_eps: 1.0e-8}   # adam_* = embeddings / norms
+
+probe:                    # low-compute LR probe: short runs, full warmup + cosine compressed to max_steps
+  max_steps: 500          # ~0.2x of the training stream
+  lrs:
+    adamw: [3.0e-4, 6.0e-4, 1.2e-3, 2.4e-3]   # 3e-4 added: 6e-4 was best at the grid edge
+    mars:  [6.0e-4, 1.2e-3, 2.4e-3]
+    lion:  [1.2e-4, 2.4e-4, 4.8e-4]   # 2.5-10x below AdamW (Lion paper: 3-10x)
+    muon:  [1.0e-2, 2.0e-2, 4.0e-2, 8.0e-2]   # 8e-2 added: 4e-2 was best at the grid edge
+
+checkpoint_dir: /scratch/likhit/anlp-a2/q2/checkpoints
+output_dir: src/part2/outputs   # every result as CSV; plots/tables are regenerated from these
+assets_dir: src/part2/assets
+log_dir: src/part2/logs
+
+wandb:
+  project: anlp-a2-q2
+  entity: null            # null -> default entity of the logged-in account
+  group: part2-optimizers
+
+hf:
+  repo_prefix: anlp-a2-q2 # -> <hf_user>/anlp-a2-q2-<optimizer>

@@ -1,0 +1,68 @@
+# Q1: Mixture-of-Experts FFNs in a decoder-only vi/ja -> en translation model
+dataset: belumind/en-vi-ja-curated-500k-triplets
+src_langs: [vi, ja]
+tgt_lang: en
+device: cuda:0            # override per run with --device
+
+tokenizer:
+  path: src/part1/tokenizer/tokenizer.json   # small, committed
+  vocab_size: 32000       # shared en+vi+ja BPE (NFKC, Metaspace, byte fallback)
+  limit_alphabet: 6000    # rarer characters fall back to UTF-8 bytes
+  max_token_length: 16
+  n_stats_triplets: 20000 # train triplets used for the length stats printout
+
+data:
+  cache_dir: /scratch/likhit/anlp-a2/q1/cache   # tokenized splits + train selection (regenerable)
+  max_len: 160            # tokens per pair incl. specials; longer triplets are dropped (p99: vi 148, ja 134)
+  token_budget: 30000000  # training tokens (src + tgt + specials) seen by every model
+  data_seed: 0            # triplet shuffle -> which triplets / in which order
+  n_val_pairs: 2000       # fixed validation subset (half vi, half ja) for in-training eval
+  bleu_n_per_lang: null   # BLEU test triplets per source language (null = every usable test triplet)
+
+model:                    # dense baseline; each variant overrides the FFN fields
+  d_model: 512
+  n_layers: 6
+  n_heads: 8
+  d_ff: 2048              # dense MLP hidden size
+  dropout: 0.0
+  aux_lb_coef: 0.01       # Switch load-balancing loss (MoE only)
+  aux_z_coef: 0.001       # router z-loss (MoE only)
+
+train:
+  batch_size: 64          # sequences per step -> steps = ceil(n_train_pairs / batch_size)
+  lr: 6.0e-4
+  min_lr_ratio: 0.1       # cosine decays to lr * min_lr_ratio
+  warmup_steps: 500
+  weight_decay: 0.1
+  betas: [0.9, 0.95]
+  grad_clip: 1.0
+  seed: 0                 # parameter init (same for every variant)
+  log_every: 50
+  val_every: 500
+  eval_batch_size: 128
+
+eval:
+  max_new_tokens: 96
+  gen_batch_size: 128
+
+checkpoint_dir: /scratch/likhit/anlp-a2/q1/checkpoints
+output_dir: src/part1/outputs   # every result as CSV; plots/tables are regenerated from these
+assets_dir: src/part1/assets
+log_dir: src/part1/logs
+
+wandb:
+  project: anlp-a2-q1
+  entity: null            # null -> default entity of the logged-in account
+  group: part1-moe
+
+hf:
+  repo_prefix: anlp-a2-q1 # -> <hf_user>/anlp-a2-q1-<variant>
+
+# 1-4: same total params as dense (4 x 512 = 2048 hidden units per layer);
+# 5: same active params as dense (2 active x 1024 = 2048).
+variants:
+  - {name: dense,               use_moe: false}
+  - {name: moe_4e_top1,         use_moe: true, n_experts: 4, top_k: 1, n_shared: 0, d_expert: 512}
+  - {name: moe_4e_top2,         use_moe: true, n_experts: 4, top_k: 2, n_shared: 0, d_expert: 512}
+  - {name: moe_shared1_3e_top1, use_moe: true, n_experts: 3, top_k: 1, n_shared: 1, d_expert: 512}
+  - {name: moe_4e_top2_active,  use_moe: true, n_experts: 4, top_k: 2, n_shared: 0, d_expert: 1024}

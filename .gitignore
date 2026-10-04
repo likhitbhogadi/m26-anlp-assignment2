@@ -19,3 +19,44 @@ src/part3/logs/*
 !src/part3/logs/sanity_20261003_212801.log
 !src/part3/logs/sanity_20261003_213728.log
 !src/part3/logs/sanity_20261003_214048.log
+
+# Q1: model weights + tokenized cache live on /scratch (see src/part1/config.yaml); never commit weights
+*.pt
+*.safetensors
+src/part1/checkpoints/
+src/part1/cache/
+# Q1: console logs are mirrored to WandB; keep them local
+src/part1/logs/*
+
+# Q2: weights + token streams live on /scratch (see src/part2/config.yaml); console logs are mirrored to WandB
+src/part2/logs/*
+# Q3: PNG previews of the figures (PDFs are used in the report)
+src/part3/assets/*.png
+# Q1: full test translations (~8 MB per variant) are uploaded to each variant's HF repo;
+# outputs/translation_samples.csv (small) stays in git
+src/part1/outputs/translations_*.csv
+# 5 MB commit cap: tokenizers (~2 MB each) are regenerable (`python -m src.partN.tokenizer`) and
+# Q1's is also in every Q1 HF model repo
+src/part1/tokenizer/tokenizer.json
+src/part2/tokenizer/tokenizer.json
+# Q1: per-step routing logs (~215 KB each) are mirrored to WandB; their one plot,
+# assets/moe_aux_and_balance.png, stays in git
+src/part1/outputs/train_routing_*.csv
+# Redundant copies (the same content is already committed elsewhere):
+# src/report.md is the source of report.pdf at the repo root
+src/report.md
+# HF links are listed in report.pdf and src/part1/report.md
+src/part1/outputs/hf_links.md
+# Q2 summary tables are repeated in src/part2/report.md and report.pdf
+src/part2/outputs/summary.md
+# Q1 test PPL/BLEU plots show the same numbers as the results table (outputs/results.csv)
+src/part1/assets/test_ppl.png
+src/part1/assets/test_bleu.png
+src/part1/assets/params_vs_quality.png
+
+report.pdf
+
+*.png
+*.csv
+*.md
+*.pdf
