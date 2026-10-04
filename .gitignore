@@ -54,9 +54,6 @@ src/part1/assets/test_ppl.png
 src/part1/assets/test_bleu.png
 src/part1/assets/params_vs_quality.png
 
-report.pdf
 
 *.png
 *.csv
-*.md
-*.pdf
