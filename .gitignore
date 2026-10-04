@@ -55,5 +55,5 @@ src/part1/assets/test_bleu.png
 src/part1/assets/params_vs_quality.png
 
 
-*.png
+# *.png
 *.csv
